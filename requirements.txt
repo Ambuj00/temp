@@ -3,5 +3,3 @@ pandas
 streamlit_sqlalchemy
 openai
 numpy
-mysqlclient
-pymysql
