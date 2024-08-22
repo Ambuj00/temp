@@ -4,21 +4,20 @@ import streamlit as st
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float
 
 # Function to generate the database schema as a string
-def generate_schema(df):
+def generate_schema(tables):
     schema = ""
-    for col in df.columns:
-        dtype = str(df[col].dtype)
-        schema += f"{col} ({dtype}), "
-    return schema.rstrip(', ')
-
+    for table, columns in tables.items():
+        schema += f"Table: {table}\nColumns:\n"
+        for col, dtype in columns.items():
+            schema += f"  {col} ({dtype}), "
+        schema = schema.rstrip(', ') + "\n\n"
+    return schema.strip()
 # Function to construct the prompt for the GPT model
 def construct_prompt(natural_language_query, schema):
     prompt = f"""
 You are an AI assistant that converts natural language to SQL queries.
 
 Here is the database schema:
-Table: data
-Columns:
 {schema}
 
 Generate a SQL query for the following request:
@@ -82,6 +81,7 @@ def execute_sql_query(engine, sql_query):
 
         return None, error_message
 
+
 # Main function to run the Streamlit app
 def main():
     if "history" not in st.session_state:
@@ -109,6 +109,8 @@ def main():
         create_database_table(df, engine)
         df.to_sql('data', con=engine, index=False, if_exists='replace')
 
+        schema = generate_schema({'data': {col: str(dtype) for col, dtype in zip(df.columns, df.dtypes)}})
+
         st.subheader("Database Preview")
         preview_df = df.iloc[8:]
         st.dataframe(preview_df)
@@ -130,7 +132,6 @@ def main():
                 if st.session_state["current_query"] != user_query:
                     st.session_state["current_query"] = user_query
                     with st.spinner('Generating SQL query...'):
-                        schema = generate_schema(df)
                         sql_query = generate_sql_query(user_query, schema, openai_api_key)
 
                         with st.spinner('Executing SQL query...'):
