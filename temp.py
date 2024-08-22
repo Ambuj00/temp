@@ -41,7 +41,9 @@ def generate_sql_query(natural_language_query, schema, openai_api_key):
         temperature=0,
     )
     sql_query = response.choices[0].message.content.strip()
+    print(f"Generated SQL query: {sql_query}")  # Print generated query
     return sql_query
+
 
 # Function to create the database table
 def create_database_table(df, engine):
@@ -62,6 +64,9 @@ def create_database_table(df, engine):
     data_table = Table('data', metadata, *columns)
     metadata.create_all(engine)
 
+    # Verify table creation
+    inspector = inspect(engine)
+    print("Tables in database:", inspector.get_table_names())
     return data_table
 
 # Function to execute the SQL query and handle errors
@@ -71,7 +76,8 @@ def execute_sql_query(engine, sql_query):
         result_df = pd.read_sql_query(sql_query, con=engine)
         return result_df, None  # Return result and no error
     except Exception as e:
-        error_message = str(e).split(':')[-1].strip()
+        error_message = str(e)
+        print(f"Error occurred: {error_message}")  # Print error details
         if 'no such table' in error_message.lower():
             error_message = "The query could not find the specified table."
         elif 'syntax error' in error_message.lower():
@@ -80,6 +86,7 @@ def execute_sql_query(engine, sql_query):
             error_message = "An error occurred while executing the query."
 
         return None, error_message
+
 
 
 # Main function to run the Streamlit app
