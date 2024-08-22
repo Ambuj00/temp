@@ -3,6 +3,10 @@ import pandas as pd
 import streamlit as st
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, func
 from sqlalchemy.sql import select
+import logging
+
+# Set up logging for debugging
+logging.basicConfig(level=logging.DEBUG)
 
 # Function to generate the database schema as a string with data types
 def generate_schema(df):
@@ -32,6 +36,7 @@ Generate an accurate and efficient SQL query for the following request:
 "{natural_language_query}"
 
 Consider complex operations like grouping, filtering, clustering, and analyzing trends.
+Ensure the SQL syntax is compatible with SQLite.
 Only provide the SQL query.
     """
     return prompt
@@ -76,18 +81,12 @@ def create_database_table(df, engine):
 # Function to execute the SQL query and handle errors, optimized for complex queries
 def execute_sql_query(engine, sql_query):
     try:
-        print(f"Executing SQL query: {sql_query}")
+        logging.debug(f"Executing SQL query: {sql_query}")
         result_df = pd.read_sql_query(sql_query, con=engine)
         return result_df, None  # Return result and no error
     except Exception as e:
         error_message = str(e).split(':')[-1].strip()
-        if 'no such table' in error_message.lower():
-            error_message = "The query could not find the specified table."
-        elif 'syntax error' in error_message.lower():
-            error_message = "The query has a syntax error."
-        else:
-            error_message = "An error occurred while executing the query."
-
+        logging.error(f"SQL Query Execution Error: {error_message}")
         return None, error_message
 
 # Main function to run the Streamlit app
