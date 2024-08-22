@@ -2,7 +2,6 @@ import openai
 import pandas as pd
 import streamlit as st
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float
-from sqlalchemy.sql import select
 
 # Function to generate the database schema as a string with data types
 def generate_schema(df):
@@ -113,8 +112,9 @@ def main():
             "Event count", "Key events"
         ]
 
-        # Use PostgreSQL instead of SQLite
-        engine = create_engine('postgresql://username:password@localhost/dbname')
+        # Modify the connection string with your MySQL credentials
+        engine = create_engine('mysql+mysqlclient://username:password@host:port/database', echo=False)
+
         create_database_table(df, engine)
         df.to_sql('data', con=engine, index=False, if_exists='replace')
 
@@ -144,27 +144,27 @@ def main():
                     with st.spinner('Executing SQL query...'):
                         result, error = execute_sql_query(engine, sql_query)
 
-                    if result is not None:
-                        if result.empty:
-                            response_text = "The query executed successfully but returned no results."
-                            table_html = "" 
-                        else:
-                            if 'table' in user_query.lower():
-                                table_html = result.to_html(index=False)
-                                response_text = ""
+                        if result is not None:
+                            if result.empty:
+                                response_text = "The query executed successfully but returned no results."
+                                table_html = "" 
                             else:
-                                response_text = result.to_string(index=False)
-                                table_html = ""
-                    else:
-                        response_text = f"Error: {error}"
-                        table_html = ""
+                                if 'table' in user_query.lower():
+                                    table_html = result.to_html(index=False)
+                                    response_text = ""
+                                else:
+                                    response_text = result.to_string(index=False)
+                                    table_html = ""
+                        else:
+                            response_text = f"Error: {error}"
+                            table_html = ""
 
-                    st.session_state["history"].append({
-                        "query": user_query,
-                        "sql_query": f"{sql_query}",
-                        "response": response_text,
-                        "table": table_html
-                    })
+                        st.session_state["history"].append({
+                            "query": user_query,
+                            "sql_query": f"{sql_query}",
+                            "response": response_text,
+                            "table": table_html
+                        })
         else:
             st.warning("Please enter your OpenAI API key to proceed.")
 
