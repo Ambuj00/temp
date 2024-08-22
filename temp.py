@@ -135,38 +135,35 @@ def main():
 
         if openai_api_key:
             if st.button("Submit Query"):
-                if st.session_state["current_query"] != user_query:
-                    st.session_state["current_query"] = user_query
-                    with st.spinner('Generating SQL query...'):
-                        schema = generate_schema(df)
-                        sql_query = generate_sql_query(user_query, schema, openai_api_key)
+                st.session_state["current_query"] = user_query
+                with st.spinner('Generating SQL query...'):
+                    schema = generate_schema(df)
+                    sql_query = generate_sql_query(user_query, schema, openai_api_key)
 
-                        with st.spinner('Executing SQL query...'):
-                            result, error = execute_sql_query(engine, sql_query)
+                    with st.spinner('Executing SQL query...'):
+                        result, error = execute_sql_query(engine, sql_query)
 
-                        if result is not None:
-                            if result.empty:
-                                response_text = "The query executed successfully but returned no results."
-                                table_html = "" 
-                            else:
-                                if 'table' in user_query.lower():
-                                    table_html = result.to_html(index=False)
-                                    response_text = ""
-                                else:
-                                    response_text = result.to_string(index=False)
-                                    table_html = ""
+                    if result is not None:
+                        if result.empty:
+                            response_text = "The query executed successfully but returned no results."
+                            table_html = "" 
                         else:
-                            response_text = f"Error: {error}"
-                            table_html = ""
+                            if 'table' in user_query.lower():
+                                table_html = result.to_html(index=False)
+                                response_text = ""
+                            else:
+                                response_text = result.to_string(index=False)
+                                table_html = ""
+                    else:
+                        response_text = f"Error: {error}"
+                        table_html = ""
 
-                        st.session_state["history"].append({
-                            "query": user_query,
-                            "sql_query": f"{sql_query}",
-                            "response": response_text,
-                            "table": table_html
-                        })
-                else:
-                    st.warning("Please enter a new query to proceed.")
+                    st.session_state["history"].append({
+                        "query": user_query,
+                        "sql_query": f"{sql_query}",
+                        "response": response_text,
+                        "table": table_html
+                    })
         else:
             st.warning("Please enter your OpenAI API key to proceed.")
 
