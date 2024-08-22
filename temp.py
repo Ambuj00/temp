@@ -1,38 +1,46 @@
 import openai
 import pandas as pd
 import streamlit as st
-from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, func
+from sqlalchemy.sql import select
 
-# Function to generate the database schema as a string
+# Function to generate the database schema as a string with data types
 def generate_schema(df):
     schema = ""
     for col in df.columns:
         dtype = str(df[col].dtype)
-        schema += f"{col} ({dtype}), "
+        if dtype == 'int64':
+            col_type = "INTEGER"
+        elif dtype == 'float64':
+            col_type = "FLOAT"
+        else:
+            col_type = "TEXT"
+        schema += f"{col} ({col_type}), "
     return schema.rstrip(', ')
 
-# Function to construct the prompt for the GPT model
+# Function to construct the prompt for the GPT model, optimized for complex queries
 def construct_prompt(natural_language_query, schema):
     prompt = f"""
-You are an AI assistant that converts natural language to SQL queries.
+You are an advanced AI assistant that converts natural language into SQL queries.
 
 Here is the database schema:
 Table: data
 Columns:
 {schema}
 
-Generate a SQL query for the following request:
+Generate an accurate and efficient SQL query for the following request:
 "{natural_language_query}"
 
+Consider complex operations like grouping, filtering, clustering, and analyzing trends.
 Only provide the SQL query.
     """
     return prompt
 
 # Function to generate the SQL query using OpenAI's GPT model
 def generate_sql_query(natural_language_query, schema, openai_api_key):
-    client = openai.OpenAI(api_key=openai_api_key)  # Set API key here
+    openai.api_key = openai_api_key  # Set API key here
     prompt = construct_prompt(natural_language_query, schema)
-    response = client.chat.completions.create(
+    response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",  # Use 'gpt-4' if available
         messages=[
             {"role": "system", "content": "You are an AI assistant."},
@@ -41,7 +49,7 @@ def generate_sql_query(natural_language_query, schema, openai_api_key):
         max_tokens=150,
         temperature=0,
     )
-    sql_query = response.choices[0].message.content.strip()
+    sql_query = response.choices[0].message['content'].strip()
     return sql_query
 
 # Function to create the database table
@@ -65,7 +73,7 @@ def create_database_table(df, engine):
 
     return data_table
 
-# Function to execute the SQL query and handle errors
+# Function to execute the SQL query and handle errors, optimized for complex queries
 def execute_sql_query(engine, sql_query):
     try:
         print(f"Executing SQL query: {sql_query}")
