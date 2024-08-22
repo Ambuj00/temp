@@ -3,3 +3,4 @@ pandas
 streamlit_sqlalchemy
 openai
 numpy
+psycopg2-binary
