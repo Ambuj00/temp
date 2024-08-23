@@ -21,18 +21,19 @@ Table: data
 Columns:
 {schema}
 
-Generate a SQL query for the following request:
+Generate a precise SQL query for the following request:
 "{natural_language_query}"
 
 Only provide the SQL query.
+If the request cannot be fulfilled, return "Not Found".
     """
     return prompt
 
 # Function to generate the SQL query using OpenAI's GPT model
 def generate_sql_query(natural_language_query, schema, openai_api_key):
-    client = openai.OpenAI(api_key=openai_api_key)  # Set API key here
+    openai.api_key = openai_api_key
     prompt = construct_prompt(natural_language_query, schema)
-    response = client.chat.completions.create(
+    response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",  # Use 'gpt-4' if available
         messages=[
             {"role": "system", "content": "You are an AI assistant."},
@@ -41,7 +42,7 @@ def generate_sql_query(natural_language_query, schema, openai_api_key):
         max_tokens=150,
         temperature=0,
     )
-    sql_query = response.choices[0].message.content.strip()
+    sql_query = response.choices[0].message['content'].strip()
     return sql_query
 
 # Function to create the database table
@@ -67,6 +68,9 @@ def create_database_table(df, engine):
 
 # Function to execute the SQL query and handle errors
 def execute_sql_query(engine, sql_query):
+    if sql_query.lower() == "not found":
+        return None, "Not Found"
+
     try:
         print(f"Executing SQL query: {sql_query}")
         result_df = pd.read_sql_query(sql_query, con=engine)
