@@ -30,8 +30,7 @@ If the request cannot be fulfilled, return "Not Found".
     return prompt
 
 # Function to generate the SQL query using OpenAI's GPT model
-def generate_sql_query(natural_language_query, schema, openai_api_key):
-    openai.api_key = openai_api_key
+def generate_sql_query(natural_language_query, schema):
     prompt = construct_prompt(natural_language_query, schema)
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",  # Use 'gpt-4' if available
@@ -42,7 +41,7 @@ def generate_sql_query(natural_language_query, schema, openai_api_key):
         max_tokens=150,
         temperature=0,
     )
-    sql_query = response.choices[0].message['content'].strip()
+    sql_query = response.choices[0].message["content"].strip()
     return sql_query
 
 # Function to create the database table
