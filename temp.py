@@ -41,7 +41,7 @@ def generate_sql_query(natural_language_query, schema):
         max_tokens=150,
         temperature=0,
     )
-    sql_query = response.choices[0].message["content"].strip()
+    sql_query = response.choices[0].message.content.strip()
     return sql_query
 
 # Function to create the database table
